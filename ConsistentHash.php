@@ -8,108 +8,106 @@
 class ConsitentHash
 {
 
-	private $virtualNode;
+    private $virtualNode;
 
-	/**
-	 * @var callable
-	 */
-	private $hashing;
+    /**
+     * @var callable
+     */
+    private $hashing;
 
-	/**
-	 * nodes
-	 * @var array
-	 */
-	private $nodes;
-
-
-	/**
-	 * virtualNodes
-	 * @var array
-	 */
-	private $virtualNodes;
+    /**
+     * nodes
+     * @var array
+     */
+    private $nodes;
 
 
-	/**
-	 * is sort
-	 * @var boolean
-	 */
-	private $isSort = false;
+    /**
+     * virtualNodes
+     * @var array
+     */
+    private $virtualNodes;
 
 
-	/**
-	 * construct
-	 * @param integer $virtualNode
-	 * @param callable  $hashing
-	 */
-	public function __construct($virtualNode = 64, $hashing = 'crc32')
-	{
-		$this->virtualNode = $virtualNode;
-		$this->hashing     = $hashing;
-	}
+    /**
+     * is sort
+     * @var boolean
+     */
+    private $isSort = false;
 
-	/**
-	 * add node
-	 * @param string $node
-	 */
-	public function addNode($node)
-	{
-		if(isset($this->nodes[$node])) {
-			return $this;
-		}
-		$this->rltVirtualNodes[$node] = array();
-		for ($i=0; $i<$this->virtualNode; $i++) {
-			$hash = call_user_func($this->hashing, $node . $i);
-			$this->virtualNodes[$hash] = $node;
-			$this->rltVirtualNodes[$node][] = $hash;
-		}
-		$this->isSort = false;
-		return $this;
-	}
 
-	/**
-	 * add nodes
-	 * @param array $nodes
-	 */
-	public function addNodes(array $nodes)
-	{
+    /**
+     * construct
+     * @param integer $virtualNode
+     * @param callable|string $hashing
+     */
+    public function __construct($virtualNode = 64, $hashing = 'crc32')
+    {
+        $this->virtualNode = $virtualNode;
+        $this->hashing = $hashing;
+    }
 
-		foreach ($nodes as $node) {
-			$this->addNode($node);
-		}
-		return $this;
-	}
+    /**
+     * add node
+     * @param string $node
+     * @return $this
+     */
+    public function addNode($node)
+    {
+        if (isset($this->nodes[$node])) {
+            return $this;
+        }
+        $this->rltVirtualNodes[$node] = array();
+        for ($i = 0; $i < $this->virtualNode; $i++) {
+            $hash = call_user_func($this->hashing, $node . $i);
+            $this->virtualNodes[$hash] = $node;
+            $this->rltVirtualNodes[$node][] = $hash;
+        }
+        $this->isSort = false;
+        return $this;
+    }
 
-	/**
-	 * get node
-	 * @param  string $key
-	 * @return string
-	 */
-	public function getNode($key)
-	{
-		if (empty($this->virtualNodes))
-		{
-		    throw new Exception("No nodes exist");
-		}
+    /**
+     * add nodes
+     * @param array $nodes
+     * @return $this
+     */
+    public function addNodes(array $nodes)
+    {
+        foreach ($nodes as $node) {
+            $this->addNode($node);
+        }
+        return $this;
+    }
 
-		if (!$this->isSort)
-		{
-		    ksort($this->virtualNodes);
-			$this->isSort = true;
-		}
+    /**
+     * get node
+     * @param  string $key
+     * @return string
+     * @throws Exception
+     */
+    public function getNode($key)
+    {
+        if (empty($this->virtualNodes)) {
+            throw new Exception("No nodes exist");
+        }
 
-		$hash = call_user_func($this->hashing, $key);
+        if (!$this->isSort) {
+            ksort($this->virtualNodes);
+            $this->isSort = true;
+        }
 
-		foreach ($this->virtualNodes as $vritualNode => $node) {
-			if ($vritualNode > $hash)
-			{
-				return $node;
-			}
-		}
+        $hash = call_user_func($this->hashing, $key);
 
-		reset($this->virtualNodes);
-		return current($this->virtualNodes);
-	}
+        foreach ($this->virtualNodes as $vritualNode => $node) {
+            if ($vritualNode > $hash) {
+                return $node;
+            }
+        }
 
+        reset($this->virtualNodes);
+        return current($this->virtualNodes);
+    }
 
 
 }
